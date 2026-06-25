@@ -6,48 +6,70 @@
 Test
 <script>
 // ======================================
-// In-App Browser Detection & External Open
+// Advanced In-App Browser Detection & External Open
 // ======================================
 
 (function () {
-
+    // 1. Better, broader detection using Regex
     function isInAppBrowser() {
         const ua = navigator.userAgent || "";
-
-        return (
-            ua.includes("FBAN") ||
-            ua.includes("FBAV") ||
-            ua.includes("Instagram") ||
-            ua.includes("Messenger")
-        );
+        // Covers Meta (FB, IG, Messenger), TikTok, Twitter, Snapchat, LinkedIn, Line
+        const rules = [
+            /FBAN|FBAV/i, /Instagram/i, /TikTok/i, 
+            /Snapchat/i, /Twitter/i, /LinkedIn/i, /Line/i
+        ];
+        return rules.some(regex => regex.test(ua));
     }
 
     function isAndroid() {
         return /Android/i.test(navigator.userAgent);
     }
 
-    function createOpenBrowserPopup() {
+    function isIOS() {
+        return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    }
 
+    function createOpenBrowserPopup() {
         if (document.getElementById("external-browser-popup")) {
             return;
         }
 
         const popup = document.createElement("div");
-
         popup.id = "external-browser-popup";
+        
+        // Added Accessibility tags and RTL direction
+        popup.setAttribute("role", "dialog");
+        popup.setAttribute("aria-modal", "true");
+        popup.setAttribute("dir", "rtl");
+
+        // Determine UI based on OS (Because iOS cannot force-open Safari programmatically)
+        let primaryActionHTML = "";
+        
+        if (isAndroid()) {
+            primaryActionHTML = `
+                <button id="external-browser-btn">
+                    فتح في المتصفح الخارجي
+                </button>`;
+        } else {
+            // For iOS, guide the user to the native menu or provide a copy link button
+            primaryActionHTML = `
+                <p style="font-size: 14px; color: #e74c3c; font-weight: bold;">
+                    ⚠️ يرجى الضغط على القائمة (⋯) بالأعلى واختيار "فتح في المتصفح"
+                </p>
+                <button id="copy-link-btn">
+                    نسخ رابط الموقع
+                </button>`;
+        }
 
         popup.innerHTML = `
             <div id="external-browser-card">
-                <h3>فتح الموقع في المتصفح الخارجي</h3>
-
+                <h3>أنت تستخدم متصفح التطبيق</h3>
                 <p>
-                    للحصول على أفضل أداء أثناء التبادل وإتمام العمليات
-                    يُفضل فتح الموقع في Chrome أو Safari.
+                    للحصول على أفضل أداء وإتمام العمليات بنجاح،
+                    يُفضل فتح الموقع في متصفح النظام الأساسي (Chrome أو Safari).
                 </p>
-
-                <button id="external-browser-btn">
-                    فتح في المتصفح الخارجي
-                </button>
+                
+                ${primaryActionHTML}
 
                 <button id="close-browser-popup">
                     متابعة داخل التطبيق
@@ -57,112 +79,126 @@ Test
 
         document.body.appendChild(popup);
 
+        // Inject CSS
         const style = document.createElement("style");
-
         style.textContent = `
-            #external-browser-popup{
-                position:fixed;
-                inset:0;
-                background:rgba(0,0,0,.75);
-                backdrop-filter:blur(6px);
-                z-index:999999;
-                display:flex;
-                justify-content:center;
-                align-items:center;
-                padding:20px;
+            #external-browser-popup {
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.75);
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px); /* Safari support */
+                z-index: 999999;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 20px;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             }
-
-            #external-browser-card{
-                width:100%;
-                max-width:420px;
-                background:#fff;
-                border-radius:18px;
-                padding:24px;
-                text-align:center;
+            #external-browser-card {
+                width: 100%;
+                max-width: 420px;
+                background: #fff;
+                border-radius: 18px;
+                padding: 24px;
+                text-align: center;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             }
-
-            #external-browser-card h3{
-                margin-bottom:12px;
+            #external-browser-card h3 {
+                margin: 0 0 12px 0;
+                color: #333;
             }
-
-            #external-browser-card p{
-                margin-bottom:20px;
-                line-height:1.8;
+            #external-browser-card p {
+                margin-bottom: 20px;
+                line-height: 1.6;
+                color: #555;
             }
-
-            #external-browser-btn{
-                width:100%;
-                border:none;
-                padding:14px;
-                border-radius:12px;
-                cursor:pointer;
-                color:#fff;
-                font-size:15px;
-                font-weight:bold;
-                background:#5b3bb0;
-                margin-bottom:10px;
+            #external-browser-btn, #copy-link-btn {
+                width: 100%;
+                border: none;
+                padding: 14px;
+                border-radius: 12px;
+                cursor: pointer;
+                color: #fff;
+                font-size: 15px;
+                font-weight: bold;
+                background: #5b3bb0;
+                margin-bottom: 10px;
+                transition: background 0.2s;
             }
-
-            #close-browser-popup{
-                width:100%;
-                border:none;
-                padding:14px;
-                border-radius:12px;
-                cursor:pointer;
-                background:#ececec;
+            #external-browser-btn:hover, #copy-link-btn:hover {
+                background: #4a2f8c;
+            }
+            #close-browser-popup {
+                width: 100%;
+                border: none;
+                padding: 14px;
+                border-radius: 12px;
+                cursor: pointer;
+                background: #ececec;
+                color: #333;
+                font-size: 15px;
+                font-weight: bold;
+                transition: background 0.2s;
+            }
+            #close-browser-popup:hover {
+                background: #dcdcdc;
             }
         `;
-
         document.head.appendChild(style);
 
-        document
-            .getElementById("external-browser-btn")
-            .addEventListener("click", openExternalBrowser);
+        // Attach Event Listeners
+        if (isAndroid()) {
+            document.getElementById("external-browser-btn").addEventListener("click", openExternalBrowser);
+        } else {
+            document.getElementById("copy-link-btn").addEventListener("click", copyToClipboard);
+        }
 
-        document
-            .getElementById("close-browser-popup")
-            .addEventListener("click", () => {
-                popup.remove();
-            });
+        document.getElementById("close-browser-popup").addEventListener("click", () => {
+            popup.remove();
+        });
     }
 
     function openExternalBrowser() {
-
         const currentUrl = window.location.href;
 
         if (isAndroid()) {
-
-            const cleanUrl =
-                currentUrl.replace(/^https?:\/\//, "");
-
-            window.location.href =
-                `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
-
+            const cleanUrl = currentUrl.replace(/^https?:\/\//, "");
+            // Using a generic intent rather than forcing Chrome specifically.
+            // If Chrome is required, you can add: package=com.android.chrome;
+            window.location.href = `intent://${cleanUrl}#Intent;scheme=https;end`;
         } else {
-
+            // Fallback for non-Android/non-iOS devices
             window.open(currentUrl, "_blank");
         }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
+    function copyToClipboard() {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            const btn = document.getElementById("copy-link-btn");
+            btn.textContent = "تم النسخ بنجاح ✔";
+            btn.style.background = "#27ae60";
+            setTimeout(() => {
+                btn.textContent = "نسخ رابط الموقع";
+                btn.style.background = "#5b3bb0";
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+    }
 
+    document.addEventListener("DOMContentLoaded", () => {
         if (!isInAppBrowser()) {
             return;
         }
 
         createOpenBrowserPopup();
 
-        // محاولة تلقائية بعد ثانية ونصف
-        setTimeout(() => {
-
-            if (isAndroid()) {
-                openExternalBrowser();
-            }
-
-        }, 1500);
+        // Removed the setTimeout auto-redirect.
+        // Browsers increasingly block non-user-initiated redirects, 
+        // which can lead to a silent failure or broken page state.
     });
-
 })();
-       
+
 </script></body>
 </html>
