@@ -1,0 +1,184 @@
+<!DOCTYPE html><html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اختبار فتح المتصفح الخارجي</title><style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Tahoma,sans-serif;
+}
+
+body{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#f5f5f5;
+}
+
+.card{
+    background:white;
+    width:90%;
+    max-width:600px;
+    padding:30px;
+    border-radius:20px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.1);
+}
+
+.card h1{
+    margin-bottom:15px;
+}
+
+.card p{
+    line-height:1.8;
+    color:#555;
+}
+
+#status{
+    margin-top:20px;
+    font-weight:bold;
+}
+
+#external-browser-banner{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.8);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:99999;
+    padding:20px;
+}
+
+.external-browser-card{
+    background:white;
+    width:100%;
+    max-width:420px;
+    border-radius:20px;
+    padding:25px;
+    text-align:center;
+}
+
+.external-browser-card h2{
+    margin-bottom:10px;
+}
+
+.external-browser-card p{
+    margin-bottom:20px;
+}
+
+#openExternalBtn{
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    background:#2563eb;
+    color:white;
+    font-size:16px;
+    font-weight:bold;
+}
+
+.external-browser-card small{
+    display:block;
+    margin-top:15px;
+}
+</style></head><body><div class="card">
+    <h1>اختبار المتصفح الداخلي</h1><p>
+    افتح هذه الصفحة من Facebook أو Instagram
+    لمعرفة ما إذا كانت محاولة فتح المتصفح الخارجي ستنجح.
+</p>
+
+<div id="status">
+    جاري الفحص...
+</div>
+
+</div><div id="external-browser-banner">
+    <div class="external-browser-card">
+        <h2>تم اكتشاف متصفح داخلي</h2>    <p>
+        حاول فتح الصفحة في Chrome أو Safari.
+    </p>
+
+    <button id="openExternalBtn">
+        فتح في المتصفح الخارجي
+    </button>
+
+    <small>
+        إذا لم يعمل الزر استخدم
+        Open in Browser
+        من قائمة التطبيق.
+    </small>
+</div>
+
+</div><script>
+function isInAppBrowser() {
+    const ua = navigator.userAgent || "";
+
+    return (
+        ua.includes("FBAN") ||
+        ua.includes("FBAV") ||
+        ua.includes("Instagram") ||
+        ua.includes("Messenger")
+    );
+}
+
+function isAndroid() {
+    return /Android/i.test(navigator.userAgent);
+}
+
+function openExternalBrowser() {
+
+    const url = window.location.href;
+
+    if (isAndroid()) {
+
+        const cleanUrl =
+            url.replace(/^https?:\/\//, '');
+
+        window.location.href =
+            "intent://" +
+            cleanUrl +
+            "#Intent;scheme=https;package=com.android.chrome;end";
+
+    } else {
+
+        window.open(url, "_blank");
+    }
+}
+
+const status = document.getElementById("status");
+
+if (isInAppBrowser()) {
+
+    status.innerHTML =
+        "تم اكتشاف Facebook / Instagram In-App Browser";
+
+    document
+        .getElementById("external-browser-banner")
+        .style.display = "flex";
+
+    document
+        .getElementById("openExternalBtn")
+        .addEventListener(
+            "click",
+            openExternalBrowser
+        );
+
+    setTimeout(() => {
+
+        if (isAndroid()) {
+            openExternalBrowser();
+        }
+
+    }, 1500);
+
+} else {
+
+    status.innerHTML =
+        "أنت تستخدم متصفحًا عاديًا (Chrome أو Safari أو Firefox)";
+}
+</script></body>
+</html>
